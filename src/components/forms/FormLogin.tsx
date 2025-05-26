@@ -17,7 +17,7 @@ interface FormLoginProps {
 function FormLogin({ route, method }: FormLoginProps) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
     const { checkAuthStatus } = useAuth();
     const navigate = useNavigate();
 
@@ -70,7 +70,14 @@ function FormLogin({ route, method }: FormLoginProps) {
         />
 
         <button className="form-button" type="submit">
-            {name}
+            {loading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Logging in...
+            </>
+          ) : (
+            name
+          )}
         </button>
 
     </form>
