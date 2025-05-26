@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import axios from 'axios';
 
 import api from "../../api";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../../constants";
@@ -42,8 +43,19 @@ function FormRegister({ route, method }: FormLoginProps) {
         }
 
         catch (error) {
-            toast.error("Error: " + error);
+            if (axios.isAxiosError(error) && error.response) {
+                const status = error.response.status;
+                const data = error.response.data;
 
+                if( status === 400){
+                    if (data.email){
+                        toast.error("An account with this email already exists.");
+                    }
+                }
+
+                else { toast.error("Error: " + error); }
+            }
+            else { toast.error("Error: " + error); }
         }
 
         finally {
@@ -59,6 +71,7 @@ function FormRegister({ route, method }: FormLoginProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
+            required
         />
 
         <input
@@ -67,6 +80,7 @@ function FormRegister({ route, method }: FormLoginProps) {
             value={first_name}
             onChange={(e) => setFirstName(e.target.value)}
             placeholder="First name"
+            required
         />
 
         <input
@@ -75,6 +89,7 @@ function FormRegister({ route, method }: FormLoginProps) {
             value={last_name}
             onChange={(e) => setLastName(e.target.value)}
             placeholder="Last name"
+            required
         />
 
 
@@ -84,6 +99,7 @@ function FormRegister({ route, method }: FormLoginProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
+            required
         />
 
 
@@ -93,6 +109,7 @@ function FormRegister({ route, method }: FormLoginProps) {
             value={password2}
             onChange={(e) => setPassword2(e.target.value)}
             placeholder="Password confirmation"
+            required
         />
 
         <button className="form-button" type="submit">

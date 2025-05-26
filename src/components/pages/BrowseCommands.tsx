@@ -530,16 +530,14 @@ const BrowseCommands = () => {
 
         {/* --- Export Button Section --- */}
         <div className="d-flex align-items-center mb-3 gap-2">
-          {commands.length > 0 && (
-            <button
-              className="btn btn-success"
-              onClick={handleExportCommands}
-              disabled={selectedCommandIds.size === 0}
-            >
-              Export Selected Commands({selectedCommandIds.size}) to .txt
-              <i className="bi bi-download ms-2"></i>
-            </button>
-          )}
+          <button
+            className="btn btn-success"
+            onClick={handleExportCommands}
+            disabled={selectedCommandIds.size === 0}
+          >
+            Export Selected Commands({selectedCommandIds.size}) to .txt
+            <i className="bi bi-download ms-2"></i>
+          </button>
 
           <button
             className="btn btn-primary"

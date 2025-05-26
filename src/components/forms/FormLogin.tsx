@@ -7,6 +7,7 @@ import { useAuth } from '../../components/AuthContext';
 
 import "../../css/Form.css";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 
 interface FormLoginProps {
@@ -40,10 +41,10 @@ function FormLogin({ route, method }: FormLoginProps) {
                 navigate("/login");
             }
         }
-
+        
         catch (error) {
-            toast.error("Error: " + error);
-
+            if (axios.isAxiosError(error) && error.response) { toast.error("Invalid credentials."); }
+            else { toast.error("Error: " + error); }
         }
 
         finally {
@@ -59,6 +60,7 @@ function FormLogin({ route, method }: FormLoginProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
+            required
         />
 
         <input
@@ -67,6 +69,7 @@ function FormLogin({ route, method }: FormLoginProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
+            required
         />
 
         <button className="form-button" type="submit">
