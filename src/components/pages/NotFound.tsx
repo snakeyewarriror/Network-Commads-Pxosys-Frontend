@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import '../../css/NotFound.css'
 
 import Layout from '../base/BaseLayout'
-import NavbarOption from '../base/Navbar'
 
 export default function NotFound() {
 

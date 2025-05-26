@@ -17,7 +17,7 @@ interface FormLoginProps {
 function FormLogin({ route, method }: FormLoginProps) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const { checkAuthStatus } = useAuth();
     const navigate = useNavigate();
 

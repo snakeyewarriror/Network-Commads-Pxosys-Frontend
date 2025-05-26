@@ -19,7 +19,7 @@ function FormRegister({ route, method }: FormLoginProps) {
     const [last_name, setLastName] = useState("");
     const [password, setPassword] = useState("");
     const [password2, setPassword2] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const name = method === "login" ? "Login" : "Register";
