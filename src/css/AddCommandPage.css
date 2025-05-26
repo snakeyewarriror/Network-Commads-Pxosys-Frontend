@@ -1,0 +1,45 @@
+.add-command-container {
+    max-width: 700px; /* Limit form width */
+    margin: 30px auto; /* Center the container */
+    padding: 20px;
+}
+
+.command-form {
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: .25rem;
+}
+
+.position-relative .form-select {
+    display: block; /* Ensure it takes full width */
+    width: 100%;
+    padding-right: 2.25rem; /* Space for the dropdown arrow */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right .75rem center;
+    background-size: 16px 12px;
+}
+
+/* Style for the button that acts as the category dropdown trigger */
+.position-relative button.form-select {
+    cursor: pointer;
+}
+
+/* Ensure dropdown menu stays within bounds */
+.dropdown-menu.show {
+    position: absolute;
+    top: 100%; /* Position below the button */
+    left: 0;
+    right: 0; /* Stretch to full width */
+    /* Add max-height and overflow-y if not already done inline */
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    z-index: 1050; /* Above other content */
+    border-radius: .25rem;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.175);
+}

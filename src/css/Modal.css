@@ -1,0 +1,157 @@
+/* src/css/Modal.css */
+
+/* The overlay that dims the background */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black backdrop - this is correct for the overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050; /* Ensure it's above other content */
+}
+
+/* The actual modal content box */
+.modal-content {
+    background-color: #ffffff !important; /* **FORCED TO FULLY OPAQUE WHITE** */
+    opacity: 1 !important; /* **FORCED TO FULLY OPAQUE** */
+
+    border-radius: 8px; /* Slightly rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+    width: 90%; /* Responsive width */
+    max-width: 500px; /* Maximum width for larger screens */
+    padding: 25px; /* Padding inside the modal box */
+    position: relative; /* Needed for z-index or absolute positioning of children */
+    z-index: 1051; /* Slightly higher than the overlay */
+    transform: none !important; /* Reset any lingering transform that might affect transparency */
+}
+
+/* Header styling */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px; /* Space below the header */
+    padding-bottom: 15px; /* Padding for border */
+    border-bottom: 1px solid #eee; /* A subtle separator line */
+}
+
+.modal-header h2 {
+    margin: 0; /* Remove default margin from h2 */
+    font-size: 1.5rem; /* Adjust font size as needed */
+    color: #333; /* Darker text color */
+}
+
+/* Close button styling */
+.close-button {
+    background: none;
+    border: none;
+    font-size: 2rem; /* Larger 'x' */
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s ease-in-out;
+}
+
+.close-button:hover {
+    color: #555;
+}
+
+/* Form styling within the modal */
+.modal-form .form-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block; /* Ensure label takes full width */
+}
+
+.modal-form .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 15px; /* Space between input and next element */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.modal-form .alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+}
+
+/* Footer styling for buttons */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px; /* Space between buttons */
+    padding-top: 15px;
+    border-top: 1px solid #eee; /* Separator line */
+    margin-top: 20px;
+}
+
+.modal-footer .btn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.modal-footer .btn-secondary {
+    background-color: #6c757d;
+    color: #fff;
+    border: 1px solid #6c757d;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.modal-footer .btn-primary {
+    background-color: #007bff;
+    color: #fff;
+    border: 1px solid #007bff;
+}
+
+.modal-footer .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.modal-footer .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Spinner styling */
+.spinner-border {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    vertical-align: text-bottom;
+    border: 0.15em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    -webkit-animation: spinner-border .75s linear infinite;
+    animation: spinner-border .75s linear infinite;
+}
+
+@-webkit-keyframes spinner-border {
+    to { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
+
+@keyframes spinner-border {
+    to { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
+
+.ms-2 {
+    margin-left: .5rem !important; /* Bootstrap's margin-left */
+}

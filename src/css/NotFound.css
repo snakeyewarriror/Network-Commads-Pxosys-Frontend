@@ -1,0 +1,46 @@
+/* Custom CSS for NotFound */
+
+/* Optional: Add a subtle background pattern or gradient */
+.not-found-container {
+    background: linear-gradient(135deg, #f0f2f5 0%, #e0e6ed 100%);
+    /* You can also use background-image for patterns */
+    /* background-image: url('your-pattern.png'); */
+    overflow: hidden; /* Prevent scrollbars from background effects */
+    position: relative;
+    z-index: 1; /* Ensure content is above any pseudo-elements */
+}
+
+/* Enhancing the 404 text */
+.error-code {
+    font-size: 10rem; /* Larger on desktop */
+    font-weight: 900; /* Extra bold */
+    text-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    position: relative;
+    display: inline-block; /* Allows text-shadow and potential pseudo-elements */
+    background: -webkit-linear-gradient(45deg, #007bff, #6f42c1); /* Blue to Purple gradient */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Smaller font size for error code on small screens */
+@media (max-width: 768px) {
+    .error-code {
+        font-size: 7rem;
+    }
+}
+
+/* Adding a subtle animation to the container or elements */
+.not-found-container .text-center {
+    animation: fadeIn 1s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

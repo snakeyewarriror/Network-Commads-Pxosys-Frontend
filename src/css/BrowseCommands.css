@@ -1,0 +1,147 @@
+/* General page styling */
+.browse-commands-container {
+  width: 90%;        /* or a % value like 90% */
+  max-width: none;    /* remove any max-width limits */
+  padding: 0 15px;    /* optional, control side padding */
+  margin: 0 auto;
+}
+
+/* Page Title */
+.browse-commands-container h2 {
+    font-size: 2.5rem; /* Larger title */
+    color: #212529; /* Darker text */
+    margin-bottom: 2rem; /* More space below title */
+    font-weight: 600; /* Slightly bolder */
+}
+
+.dropdown-toggle {
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.dropdown-menu {
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+/* Search and Filter Card */
+.search-filter-card {
+    background-color: #f8f9fa; /* Light grey background */
+    border: 1px solid #e9ecef; /* Light border */
+    border-radius: 0.5rem; /* Rounded corners */
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Subtle shadow */
+    padding: 1.5rem; /* Internal padding */
+    margin-bottom: 2rem; /* Space below the card */
+}
+
+.search-input-group {
+    display: flex;
+    align-items: stretch; /* Ensure all items in the group stretch to the same height */
+    margin-bottom: 1rem; /* Space below the search input line */
+}
+
+.search-input-group .form-control {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.search-input-group .btn-primary {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Toggle button for advanced filters */
+.toggle-filters-btn {
+  min-width: 44px;
+  height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0.5rem;
+  background-color: #6c757d; /* Bootstrap secondary color */
+  color: white;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s, transform 0.2s;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.toggle-filters-btn i {
+  font-size: 1.4rem;
+}
+
+/* Hover and active effect */
+.toggle-filters-btn:hover {
+  background-color: #5a6268;
+  transform: scale(1.05);
+}
+
+/* Optional: Change background when active */
+.toggle-filters-btn.active {
+  background-color: #495057;
+}
+
+/* Advanced Filters Section */
+.advanced-filters-section {
+    padding-top: 1rem; /* Padding above the filters */
+    border-top: 1px solid #dee2e6; /* Separator line */
+    margin-top: 1rem; /* Space from separator */
+}
+
+.advanced-filters-section .form-check {
+    margin-bottom: 0.5rem; /* Space below checkboxes */
+}
+
+.advanced-filters-section .form-control-sm,
+.advanced-filters-section .form-select-sm {
+    margin-top: 0.25rem; /* Small space between label/checkbox and input/select */
+}
+
+/* Table Styling */
+.table-responsive {
+    margin-top: 2rem; /* Space above the table */
+    border-radius: 0.5rem; /* Rounded corners for the responsive container */
+    overflow: hidden; /* Ensures rounded corners apply to content */
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Subtle shadow */
+}
+
+.table {
+    margin-bottom: 0; /* Remove default table bottom margin if responsive wrapper has its own */
+}
+
+.table thead.thead-dark th {
+    background-color: #343a40; /* Darker header */
+    color: #f8f9fa; /* Light text */
+    border-color: #454d55; /* Darker border */
+    vertical-align: middle; /* Center text vertically */
+}
+
+.table tbody tr:hover {
+    background-color: #e2f0fd; /* Light blue on hover */
+}
+
+.table tbody tr td {
+    vertical-align: middle; /* Center content vertically */
+}
+
+.btn-danger.btn-sm {
+    min-width: 60px; /* Give delete button a consistent size */
+}
+
+/* No results message */
+.text-center {
+    padding: 1.5rem 0; /* Add padding to loading/no results messages */
+    font-style: italic;
+    color: #6c757d;
+}
+
+/* Error message */
+.alert-danger {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
