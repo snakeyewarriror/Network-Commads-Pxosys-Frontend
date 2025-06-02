@@ -13,7 +13,7 @@ interface Props {
   level?: number;
 }
 
-const CategoryTree: React.FC<Props> = ({ nodes, selectedId, onSelect, level = 0 }) => {
+const TagTree: React.FC<Props> = ({ nodes, selectedId, onSelect, level = 0 }) => {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const toggleExpand = (id: number) => {
@@ -27,7 +27,7 @@ const CategoryTree: React.FC<Props> = ({ nodes, selectedId, onSelect, level = 0 
   };
 
   return (
-    <ul className="category-tree" style={{ listStyle: 'none', paddingLeft: level * 10 }}>
+    <ul className="tag-tree" style={{ listStyle: 'none', paddingLeft: level * 10 }}>
       {nodes.map(node => (
         <li key={node.id}>
           <div>
@@ -48,7 +48,7 @@ const CategoryTree: React.FC<Props> = ({ nodes, selectedId, onSelect, level = 0 
             {node.name}
           </div>
           {node.children && expanded.has(node.id) && (
-            <CategoryTree
+            <TagTree
               nodes={node.children}
               selectedId={selectedId}
               onSelect={onSelect}
@@ -61,4 +61,4 @@ const CategoryTree: React.FC<Props> = ({ nodes, selectedId, onSelect, level = 0 
   );
 };
 
-export default CategoryTree;
+export default TagTree;

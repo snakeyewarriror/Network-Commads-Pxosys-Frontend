@@ -79,7 +79,7 @@ api.interceptors.response.use(
           // Refresh failed, clear tokens and redirect to login
           processQueue(error); // Reject all queued requests
           clearTokens();
-          window.location.href = '/login'; // Redirect to login page
+          window.location.href = '/portal/admin-entry'; // Redirect to login page
           return Promise.reject(error); // Reject the original failed request
         }
       } catch (refreshError) {
@@ -87,7 +87,7 @@ api.interceptors.response.use(
         console.error("Refresh token process failed:", refreshError);
         processQueue(refreshError as Error); // Reject all queued requests
         clearTokens();
-        window.location.href = '/login'; // Redirect to login page
+        window.location.href = '/portal/admin-entry'; // Redirect to login page
         return Promise.reject(refreshError); // Reject the original failed request
       } finally {
         isRefreshing = false; // Reset refresh flag

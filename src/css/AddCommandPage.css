@@ -24,7 +24,7 @@
     background-size: 16px 12px;
 }
 
-/* Style for the button that acts as the category dropdown trigger */
+/* Style for the button that acts as the tag dropdown trigger */
 .position-relative button.form-select {
     cursor: pointer;
 }

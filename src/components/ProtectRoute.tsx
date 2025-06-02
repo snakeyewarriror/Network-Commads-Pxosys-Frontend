@@ -30,7 +30,7 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <div>Loading authentication...</div>; // More specific loading message
   }
 
-  return isAuthorized ? children : <Navigate to="/login" replace />;
+  return isAuthorized ? children : <Navigate to="/portal/admin-entry" replace />;
 }
 
 export default ProtectedRoute;

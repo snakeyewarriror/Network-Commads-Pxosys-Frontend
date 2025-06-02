@@ -1,39 +1,24 @@
-import { useEffect, useState, type ChangeEvent, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, type ChangeEvent } from 'react';
 import Layout from '../base/BaseLayout';
 import api from '../../api';
-import CategoryTree from '../Aux/CategoryTree';
+import TagTree from '../Aux/TagTree';
 import { useNavigate } from 'react-router-dom';
 import '../../css/BrowseCommands.css';
 import { toast } from 'react-toastify';
 
-interface Command {
-  id: number;
-  command: string;
-  description: string | null;
-  example: string | null;
-  version: string | null;
-  vendor: string;
-  os: string | null;
-  category: string | null;
-}
+import ExportCommandsModal from '../modals/ExportCommandsModal';
 
-interface DropdownItem {
-  id: number;
-  name: string;
-}
+// Interfaces and types import
+import type {
+  Command,
+  DropdownItem,
+  TagTreeItem,
+  PagedResponse,
+  filter_input_values,
+  FilterName
+} from '../../types/index';
+import { exportCommandsToFile } from '../../utils/exportUtils'; 
 
-interface CategoryTreeItem {
-  id: number;
-  name: string;
-  children: CategoryTreeItem[];
-}
-
-interface PagedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
 
 function printErrors(err: any) {
   console.error('Error fetching data:', err);
@@ -46,13 +31,46 @@ function printErrors(err: any) {
   }
 }
 
+
+const useDebounceSearch = (search_term: string, delay: number = 500): string => {
+  const [debounced_value, set_debounce_value] = useState<string>(search_term);
+  
+  useEffect(()=> {
+    const handler = setTimeout(() => {
+      set_debounce_value(search_term);
+    }, delay);
+
+    return () => clearTimeout(handler);
+  }, [search_term, delay]);
+
+  return debounced_value
+};
+
+const useSearchParams = (filter_input_values: filter_input_values, debounced_search_term: string): Record<string, string> => {
+  return useMemo(() => {
+    const params: Record<string, string> = {};
+
+    if(debounced_search_term.trim()) {
+      params.search = debounced_search_term.trim();
+    }
+
+    Object.entries(filter_input_values).forEach(([key, value]) => {
+      if(value && value.trim()) {
+        params[key] = value.trim();
+      }
+    });
+
+    return params;
+  }, [filter_input_values, debounced_search_term]);
+};
+
 const BrowseCommands = () => {
   const navigate = useNavigate();
 
   const [commands, setCommands] = useState<Command[]>([]);
   const [dropdownLoading, setDropdownLoading] = useState<boolean>(true);
   const [loadingCommands, setLoadingCommands] = useState<boolean>(true);
-  const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false); // NEW
+  const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false);
 
   // States for pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -62,52 +80,51 @@ const BrowseCommands = () => {
 
   // States for dropdown data
   const [vendors, setVendors] = useState<DropdownItem[]>([]);
-  const [oss, setOss] = useState<DropdownItem[]>([]);
-  const [categoryTree, setCategoryTree] = useState<CategoryTreeItem[]>([]);
+  const [platforms, setPlatforms] = useState<DropdownItem[]>([]);
+  const [tagTree, setTagTree] = useState<TagTreeItem[]>([]);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>('');
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const [allSelected, setAllSelected] = useState(false);
 
   // State for search and filter
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [search_term, set_search_term] = useState<string>('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
 
   // States for selected commands
   const [selectedCommandIds, setSelectedCommandIds] = useState<Set<number>>(new Set());
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
-  // States for individual filter checkboxes and their input values
-  const [activeFilters, setActiveFilters] = useState({
-    vendor__name: false,
-    os__name: false,
-    category__name: false,
-    version: false,
-  });
-
-  const [filterInputValues, setFilterInputValues] = useState({
+  
+  const [filter_input_values, set_filter_input_values] = useState({
     vendor__name: '',
-    os__name: '',
+    platform__name: '',
+    tag__name: '',
     version: '',
   });
 
-  // FIXED: Removed dependencies that cause frequent re-creation
+
+
+  const debounced_search_term = useDebounceSearch(search_term);
+  const searchParams = useSearchParams(filter_input_values, debounced_search_term);
+
   const fetchCommands = useCallback(async (page: number = 1, size: number = 10, params: Record<string, string | number> = {}) => {
     setLoadingCommands(true);
 
     const queryParams: Record<string, string | number> = {
       page: page.toString(),
       page_size: size.toString(),
-      ...params // Accept external params to avoid dependency issues
+      ...params
     };
 
     try {
       const response = await api.get<PagedResponse<Command>>('/commands/get-filtered/', { params: queryParams });
+      console.log(response)
       setCommands(response.data.results);
       setTotalCommands(response.data.count);
       setTotalPages(Math.ceil(response.data.count / size));
       setCurrentPage(page);
-    } catch (err: any) {
+    }
+    catch (err: any) {
       printErrors(err);
       setCommands([]);
       setTotalCommands(0);
@@ -116,69 +133,191 @@ const BrowseCommands = () => {
     } finally {
       setLoadingCommands(false);
     }
-  }, []); // Minimal dependencies
+  }, []);
 
   // Helper function to build current filter params
   const getCurrentFilterParams = useCallback(() => {
     const params: Record<string, string | number> = {};
 
-    if (searchTerm.trim()) {
-      params.search = searchTerm.trim();
+    if (debounced_search_term.trim()) {
+      params.search = debounced_search_term.trim();
     }
-    if (activeFilters.vendor__name && filterInputValues.vendor__name.trim()) {
-      params.vendor__name = filterInputValues.vendor__name.trim();
+
+    if (filter_input_values.vendor__name.trim()) {
+      params.vendor__name = filter_input_values.vendor__name.trim();
     }
-    if (activeFilters.os__name && filterInputValues.os__name.trim()) {
-      params.os__name = filterInputValues.os__name.trim();
+    if (filter_input_values.platform__name.trim()) {
+      params.platform__name = filter_input_values.platform__name.trim();
     }
-    if (activeFilters.category__name && selectedCategoryName.trim() && selectedCategoryId !== null) {
-      params.category__name = selectedCategoryName.trim();
+    if (filter_input_values.tag__name.trim()) {
+      params.tag__name = filter_input_values.tag__name.trim();
     }
-    if (activeFilters.version && filterInputValues.version.trim()) {
-      params.version = filterInputValues.version.trim();
+    if (filter_input_values.version.trim()) {
+      params.version = filter_input_values.version.trim();
     }
 
     return params;
-  }, [searchTerm, activeFilters, filterInputValues, selectedCategoryName, selectedCategoryId]);
+  }, [debounced_search_term, filter_input_values]);
 
   const fetchDependentDropdowns = useCallback(async (vendorId: number | '') => {
-    if (vendorId !== '') {
-      setDropdownLoading(true);
-    }
+    setDropdownLoading(true); // Always set loading for dependent dropdowns
     try {
-      const osUrl = vendorId ? `/os/get-all/?vendor_id=${vendorId}` : '/os/get-all/';
-      const categoryUrl = vendorId ? `/categories/get-all-tree/?vendor_id=${vendorId}` : '/categories/get-all-tree/';
+      const platform_url = vendorId ? `/platform/get-all/?vendor_id=${vendorId}` : '/platform/get-all/';
+      const TagUrl = vendorId ? `/tags/get-all-tree/?vendor_id=${vendorId}` : '/tags/get-all-tree/';
 
-      const [osRes, categoriesRes] = await Promise.all([
-        api.get<DropdownItem[]>(osUrl),
-        api.get<CategoryTreeItem[]>(categoryUrl),
+      const [platformRes, tagsRes] = await Promise.all([
+        api.get<DropdownItem[]>(platform_url),
+        api.get<TagTreeItem[]>(TagUrl),
       ]);
 
-      setOss(osRes.data);
-      setCategoryTree(categoriesRes.data);
+      setPlatforms(platformRes.data);
+      setTagTree(tagsRes.data);
 
-      const selectedOsExists = osRes.data.some(os => os.name === filterInputValues.os__name);
-      if (filterInputValues.os__name && !selectedOsExists) {
-        setFilterInputValues(prev => ({ ...prev, os__name: '' }));
-      }
-      const selectedCategoryExists = categoriesRes.data.some(cat => cat.id === selectedCategoryId);
-      if (selectedCategoryId !== null && !selectedCategoryExists) {
-        setSelectedCategoryId(null);
-        setSelectedCategoryName('');
+      // Keep selected platform if it exists in the new list, otherwise clear
+      const currentPlatformName = filter_input_values.platform__name;
+      const selectedPlatformExists = platformRes.data.some(platform => platform.name === currentPlatformName);
+      if (currentPlatformName && !selectedPlatformExists) {
+        set_filter_input_values(prev => ({ ...prev, platform__name: '' }));
       }
 
-    } catch (err) {
-      printErrors(err);
-      setOss([]);
-      setCategoryTree([]);
-    } finally {
-      if (vendorId !== '') {
-        setDropdownLoading(false);
+      // Keep selected tag if it exists in the new list, otherwise clear
+      const selectedTagExists = tagsRes.data.some(cat => cat.name === filter_input_values.tag__name); // Check by name
+      if (filter_input_values.tag__name && !selectedTagExists) {
+        set_filter_input_values(prev => ({ ...prev, tag__name: '' })); // Clear tag__name
       }
+
     }
-  }, [filterInputValues.os__name, selectedCategoryId]);
+    catch (err) {
+      printErrors(err);
+      setPlatforms([]); // Clear platforms on error
+      setTagTree([]); // Clear tags on error
+    }
+    finally {
+      setDropdownLoading(false);
+    }
+  }, [filter_input_values.platform__name, filter_input_values.tag__name]); // Depend on relevant filter input values
 
-  // FIXED: Single initial fetch effect
+
+  const performSearch = useCallback(async(): Promise<void> => {
+    setLoadingCommands(true);
+    const queryParams: Record<string, string | number> = {
+      page: currentPage.toString(),
+      page_size: pageSize.toString(),
+      ...searchParams
+    };
+
+    try{
+      const response = await api.get<PagedResponse<Command>>('/commands/get-filtered/', {
+        params: queryParams 
+      });
+
+      setCommands(response.data.results)
+      setTotalCommands(response.data.count);
+      setTotalPages(Math.ceil(response.data.count / pageSize));
+    }
+
+    catch(err: any){
+      printErrors(err);
+      setCommands([]);
+      setTotalCommands(0);
+      setTotalPages(1);
+      setCurrentPage(1);
+    }
+
+    finally{
+      setLoadingCommands(false);
+    }
+  }, [ currentPage, pageSize, searchParams]);
+
+   const handleSearchTermChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    set_search_term(e.target.value);
+
+    // Auto-reset to first page when search changes
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  };
+
+  const handleManualSearch = (): void => {
+    setCurrentPage(1);
+    performSearch();
+  };
+
+  const handleFilterChange = (filterName: FilterName) => 
+    (e: ChangeEvent<HTMLSelectElement | HTMLInputElement>): void => {
+      const value = e.target.value;
+      
+      set_filter_input_values(prev => ({
+        ...prev,
+        [filterName]: value,
+      }));
+
+      // Reset to first page when filters change
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      }
+
+      // Special handling for vendor change
+      if (filterName === 'vendor__name') {
+        const selectedVendor = vendors.find(v => v.name === value);
+        fetchDependentDropdowns(selectedVendor ? selectedVendor.id : '');
+        
+        // Clear dependent filters
+        set_filter_input_values(prev => ({ 
+          ...prev, 
+          [filterName]: value,
+          platform__name: '', 
+          tag__name: '' 
+        }));
+      }
+      
+      if (tagDropdownOpen) {
+        setTagDropdownOpen(false);
+      }
+    };
+
+
+
+  const clearAllFilters = (): void => {
+    set_search_term('');
+    set_filter_input_values({
+      vendor__name: '',
+      platform__name: '',
+      tag__name: '',
+      version: '',
+    });
+    setCurrentPage(1);
+  };
+
+  // Search status component
+  const SearchStatus: React.FC = () => {
+    const hasActiveSearch = search_term.trim() || 
+      Object.values(filter_input_values).some((v: string) => v.trim());
+    
+    if (!hasActiveSearch) return null;
+    
+    return (
+      <div className="search-status mb-2">
+        <small className="text-muted">
+          {loadingCommands ? (
+            <>Searching...</>
+          ) : (
+            <>Found {totalCommands} results</>
+          )}
+          {hasActiveSearch && (
+            <button 
+              className="btn btn-link btn-sm p-0 ms-2" 
+              onClick={clearAllFilters}
+              type="button"
+            >
+              Clear all filters
+            </button>
+          )}
+        </small>
+      </div>
+    );
+  };
+
   useEffect(() => {
     const fetchInitialData = async () => {
       setDropdownLoading(true);
@@ -188,9 +327,9 @@ const BrowseCommands = () => {
         const vendorRes = await api.get<DropdownItem[]>('/vendors/get-all/');
         setVendors(vendorRes.data);
 
-        await fetchDependentDropdowns('');
+        await fetchDependentDropdowns(''); // Fetch platforms and tags without initial vendor filter
         await fetchCommands(1, pageSize);
-        setInitialLoadComplete(true); // Mark initial load as complete
+        setInitialLoadComplete(true);
 
       } catch (err) {
         printErrors(err);
@@ -200,43 +339,15 @@ const BrowseCommands = () => {
       }
     };
     fetchInitialData();
-  }, []); // Only run once on mount
+  }, []);
 
-  // FIXED: Separate effect for pagination that only runs after initial load
+  // Use effect for when the user writes or chooses one of the filters
   useEffect(() => {
-    if (!initialLoadComplete) return; // Don't run until initial load is complete
-    
+    if (!initialLoadComplete) return;
+
     const params = getCurrentFilterParams();
     fetchCommands(currentPage, pageSize, params);
-  }, [currentPage, pageSize, initialLoadComplete, fetchCommands, getCurrentFilterParams]);
-
-  const handleSearchTermChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleCheckboxChange = (filterName: keyof typeof activeFilters) => (e: ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked;
-    setActiveFilters(prev => ({
-      ...prev,
-      [filterName]: checked,
-    }));
-
-    if (!checked) {
-      if (filterName === 'category__name') {
-        setSelectedCategoryId(null);
-        setSelectedCategoryName('');
-        setCategoryDropdownOpen(false);
-      } else {
-        setFilterInputValues(prev => ({
-          ...prev,
-          [filterName]: '',
-        }));
-        if (filterName === 'vendor__name') {
-          fetchDependentDropdowns('');
-        }
-      }
-    }
-  };
+  }, [currentPage, pageSize, initialLoadComplete, fetchCommands, getCurrentFilterParams, debounced_search_term]);
 
   const handleSelectAllChange = (e: ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
@@ -264,31 +375,78 @@ const BrowseCommands = () => {
     });
   };
 
-  const handleExportCommands = () => {
+  // -------------- Export functions --------------
+
+  const closeExportModal = () => {
+    setIsExportModalOpen(false);
+  };
+
+  // Function to determine if all selected commands share the same vendor
+  const getSingleVendorInfo = useCallback((): string | null => {
+    if (selectedCommandIds.size === 0) {
+      return null; // No commands selected
+    }
+
+    let firstVendor: string | null = null;
+    let allSameVendor = true;
+
+    for (const cmdId of selectedCommandIds) {
+      const command = commands.find(c => c.id === cmdId);
+
+      if (command) {
+
+        if (firstVendor === null) {
+          firstVendor = command.vendor;
+        }
+        else if (command.vendor !== firstVendor) {
+          allSameVendor = false;
+          break; // Found different vendor, no need to check further
+        }
+      }
+    }
+    return allSameVendor ? firstVendor : null;
+  }, [selectedCommandIds, commands]);
+
+  // Function to handle the export decision
+  const handleExportClick = useCallback(async () => {
     if (selectedCommandIds.size === 0) {
       toast.error('Please select at least one command to export.');
       return;
     }
 
-    const selectedCommandsText = commands
-      .filter(cmd => selectedCommandIds.has(cmd.id))
-      .map(cmd => cmd.command)
-      .join('\n');
+    const singleVendorName = getSingleVendorInfo();
 
-    const blob = new Blob([selectedCommandsText], { type: 'text/plain;charset=utf-8' });
-    const href = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = href;
-    link.download = 'selected_commands.txt';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(href);
-  };
+    if (singleVendorName !== null) {
+      // All selected commands are from the same vendor - bypass modal
+      const commandsToExport = Array.from(selectedCommandIds)
+        .map(id => commands.find(cmd => cmd.id === id))
+        .filter((cmd): cmd is Command => cmd !== undefined);
 
-  const handleFilterValueChange = (filterName: 'vendor__name' | 'os__name' | 'version') => (e: ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+      const fileName = `${singleVendorName.replace(/\s/g, '_')}_commands.txt`;
+
+      await exportCommandsToFile({
+        commandsToExport,
+        fileName,
+        vendorNameForHeader: singleVendorName, // Pass the vendor name for header logic
+        allVendors: vendors, // Pass all vendors
+      });
+
+      // Optionally, clear selection after direct export
+      setSelectedCommandIds(new Set());
+      setAllSelected(false);
+    } else {
+      // Multiple vendors or no commands selected - open modal
+      setIsExportModalOpen(true);
+    }
+  }, [selectedCommandIds, commands, vendors, getSingleVendorInfo]);
+
+
+  // -------------- Handle functions --------------
+
+  const handleFilterValueChange = (filterName: 'vendor__name' | 'platform__name' | 'version' | 'tag__name') => 
+  (e: ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const value = e.target.value;
-    setFilterInputValues(prev => ({
+    set_filter_input_values(prev => ({
       ...prev,
       [filterName]: value,
     }));
@@ -296,24 +454,26 @@ const BrowseCommands = () => {
     if (filterName === 'vendor__name') {
       const selectedVendor = vendors.find(v => v.name === value);
       fetchDependentDropdowns(selectedVendor ? selectedVendor.id : '');
+
+      // Clear platform and tag selections when vendor changes
+      set_filter_input_values(prev => ({ ...prev, platform__name: '', tag__name: '' }));
     }
-  };
-
-  const handleCategorySelect = (id: number, name: string) => {
-    setSelectedCategoryId(id);
-    setSelectedCategoryName(name);
-    setActiveFilters(prev => ({ ...prev, category__name: true }));
-    setCategoryDropdownOpen(false);
-  };
-
-  const handleSearchButtonClick = () => {
-    setCurrentPage(1);
-    const params = getCurrentFilterParams();
-    fetchCommands(1, pageSize, params);
+    
+    if (tagDropdownOpen) {
+      setTagDropdownOpen(false);
+    }
   };
 
   const handleToggleAdvancedFilters = () => {
     setShowAdvancedFilters(prev => !prev);
+    if (showAdvancedFilters) {
+      set_filter_input_values({
+        vendor__name: '',
+        platform__name: '',
+        tag__name: '',
+        version: '',
+      });
+    }
   };
 
   const handleUploadCommandsCSVClick = () => {
@@ -341,22 +501,23 @@ const BrowseCommands = () => {
         <h2 className="text-center">Browse Commands</h2>
 
         <div className="search-filter-card">
+
+          <SearchStatus />
+
           <div className="input-group search-input-group">
             <input
               type="text"
               className="form-control"
               placeholder="Search command..."
-              value={searchTerm}
+              value={search_term}
               onChange={handleSearchTermChange}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
-                  handleSearchButtonClick();
+                  handleManualSearch();
                 }
               }}
             />
-            <button className="btn btn-primary" type="button" onClick={handleSearchButtonClick}>
-              Search
-            </button>
+
             <button
               className={`btn btn-secondary ms-2 toggle-filters-btn ${showAdvancedFilters ? 'active' : ''}`}
               type="button"
@@ -365,35 +526,30 @@ const BrowseCommands = () => {
             >
               <i className={"bi bi-list"}></i>
             </button>
+
           </div>
 
           {showAdvancedFilters && (
             <div className="advanced-filters-section row g-2">
+
               {/* Vendor Filter (Dropdown) */}
               <div className="col-md-6 col-lg-3">
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="filterVendor"
-                    checked={activeFilters.vendor__name}
-                    onChange={handleCheckboxChange('vendor__name')}
-                  />
-                  <label className="form-check-label" htmlFor="filterVendor">
-                    Vendor:
-                  </label>
-                </div>
+                <label htmlFor="vendorSelect" className="form-label mb-0">Vendor:</label>
+
                 {dropdownLoading ? (
                   <select className="form-select form-select-sm" disabled>
                     <option>Loading Vendors...</option>
                   </select>
+
                 ) : (
+
                   <select
+                    id="vendorSelect"
                     className="form-select form-select-sm"
-                    value={filterInputValues.vendor__name}
-                    onChange={handleFilterValueChange('vendor__name')}
-                    disabled={!activeFilters.vendor__name}
+                    value={filter_input_values.vendor__name}
+                    onChange={handleFilterChange('vendor__name')}
                   >
+
                     <option value="">--Select Vendor--</option>
                     {vendors.map(vendor => (
                       <option key={vendor.id} value={vendor.name}>
@@ -404,38 +560,28 @@ const BrowseCommands = () => {
                 )}
               </div>
 
-              {/* OS Filter (Dropdown) */}
+              {/* Platform Filter (Dropdown) */}
               <div className="col-md-6 col-lg-3">
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="filterOS"
-                    checked={activeFilters.os__name}
-                    onChange={handleCheckboxChange('os__name')}
-                  />
-                  <label className="form-check-label" htmlFor="filterOS">
-                    OS:
-                  </label>
-                </div>
+                <label htmlFor="platformSelect" className="form-label mb-0">Platform:</label>
                 {dropdownLoading ? (
                   <select className="form-select form-select-sm" disabled>
-                    <option>Loading OSes...</option>
+                    <option>Loading Platforms...</option>
                   </select>
                 ) : (
                   <select
+                    id="platformSelect"
                     className="form-select form-select-sm"
-                    value={filterInputValues.os__name}
-                    onChange={handleFilterValueChange('os__name')}
-                    disabled={!activeFilters.os__name}
+                    value={filter_input_values.platform__name}
+                    onChange={handleFilterChange('platform__name')}
+                    disabled={dropdownLoading}
                   >
-                    <option value="">--Select OS--</option>
-                    {oss.length === 0 && activeFilters.vendor__name && filterInputValues.vendor__name !== '' ? (
-                      <option disabled>No OS found for selected vendor</option>
+                    <option value="">--Select Platform--</option>
+                    {platforms.length === 0 && filter_input_values.vendor__name !== '' ? (
+                      <option disabled>No Platform found for selected vendor</option>
                     ) : (
-                      oss.map(os => (
-                        <option key={os.id} value={os.name}>
-                          {os.name}
+                      platforms.map(platform => (
+                        <option key={platform.id} value={platform.name}>
+                          {platform.name}
                         </option>
                       ))
                     )}
@@ -443,35 +589,23 @@ const BrowseCommands = () => {
                 )}
               </div>
 
-              {/* Category Filter (Dropdown using CategoryTree) */}
+              {/* Tag Filter (Dropdown using tagTree) */}
               <div className="col-md-6 col-lg-3">
-                <div className="form-check mb-2">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="filterCategory"
-                    checked={activeFilters.category__name}
-                    onChange={handleCheckboxChange('category__name')}
-                  />
-                  <label className="form-check-label" htmlFor="filterCategory">
-                    Filter by Category
-                  </label>
-                </div>
+                <label htmlFor="tagFilterDropdown" className="form-label mb-0">Filter by Tag:</label>
 
                 <div className="position-relative">
+
                   <button
+                    id="tagFilterDropdown"
                     className="form-select form-select-sm text-start"
-                    style={{ cursor: activeFilters.category__name ? 'pointer' : 'not-allowed' }}
                     type="button"
-                    onClick={() => {
-                      if (activeFilters.category__name) setCategoryDropdownOpen(prev => !prev);
-                    }}
-                    disabled={!activeFilters.category__name || dropdownLoading}
+                    onClick={() => setTagDropdownOpen(prev => !prev)}
+                    disabled={dropdownLoading}
                   >
-                    {selectedCategoryName || '--Select Category--'}
+                    {filter_input_values.tag__name || '--Select Tag--'} {/* Display current value */}
                   </button>
 
-                  {categoryDropdownOpen && (
+                  {tagDropdownOpen && (
                     <div
                       className="dropdown-menu show w-100 mt-1 p-2"
                       style={{
@@ -479,22 +613,34 @@ const BrowseCommands = () => {
                         overflowY: 'auto',
                         border: '1px solid #ccc',
                         zIndex: 1050,
-                        pointerEvents: activeFilters.category__name ? 'auto' : 'none',
-                        opacity: activeFilters.category__name ? 1 : 0.5,
                       }}
                     >
                       {dropdownLoading ? (
-                        <div>Loading Categories...</div>
+                        <div className="dropdown-item text-muted">Loading tags...</div>
                       ) : (
-                        categoryTree.length === 0 && activeFilters.vendor__name && filterInputValues.vendor__name !== '' ? (
-                          <div>No categories found for selected vendor.</div>
-                        ) : (
-                          <CategoryTree
-                            nodes={categoryTree}
-                            selectedId={selectedCategoryId}
-                            onSelect={handleCategorySelect}
-                          />
-                        )
+                        <>
+                          {/* Default option to clear tag filter */}
+                          <button
+                            className="dropdown-item"
+                            onClick={() => handleFilterValueChange('tag__name')({ target: { value: '' } } as ChangeEvent<HTMLSelectElement>)}
+                            style={{ fontWeight: filter_input_values.tag__name === '' ? 'bold' : 'normal' }}
+                          >
+                            -- Select Tag --
+                          </button>
+                          {tagTree.length === 0 && filter_input_values.vendor__name !== '' ? (
+                            <div className="dropdown-item text-muted">No tags found for selected vendor.</div>
+                          ) : (
+                            <TagTree
+                              nodes={tagTree}
+                              // Instead of selectedId, you might need to pass the selectedName for styling
+                              selectedId={tagTree.find(tag => tag.name === filter_input_values.tag__name)?.id || null}
+                              onSelect={(_id, name) => {
+                                handleFilterValueChange('tag__name')({ target: { value: name } } as ChangeEvent<HTMLSelectElement>);
+                                setTagDropdownOpen(false); // Close after selection
+                              }}
+                            />
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -503,25 +649,15 @@ const BrowseCommands = () => {
 
               {/* Version Filter */}
               <div className="col-md-6 col-lg-3">
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="filterVersion"
-                    checked={activeFilters.version}
-                    onChange={handleCheckboxChange('version')}
-                  />
-                  <label className="form-check-label" htmlFor="filterVersion">
-                    Version:
-                  </label>
-                </div>
+
+                <label htmlFor="versionInput" className="form-label mb-0">Version:</label>
                 <input
+                  id="versionInput"
                   type="text"
                   className="form-control form-control-sm"
                   placeholder="e.g., 15.5.6"
-                  value={filterInputValues.version}
-                  onChange={handleFilterValueChange('version')}
-                  disabled={!activeFilters.version}
+                  value={filter_input_values.version}
+                  onChange={handleFilterChange('version')}
                 />
               </div>
             </div>
@@ -532,7 +668,7 @@ const BrowseCommands = () => {
         <div className="d-flex align-items-center mb-3 gap-2">
           <button
             className="btn btn-success"
-            onClick={handleExportCommands}
+            onClick={handleExportClick}
             disabled={selectedCommandIds.size === 0}
           >
             Export Selected Commands({selectedCommandIds.size}) to .txt
@@ -564,10 +700,8 @@ const BrowseCommands = () => {
                 <th>Vendor</th>
                 <th>Command</th>
                 <th>Description</th>
-                <th>Example</th>
                 <th>Version</th>
-                <th>OS</th>
-                <th>Category</th>
+                <th>Tag</th>
                 <th>
                   <div className="form-check">
                     <input
@@ -605,10 +739,8 @@ const BrowseCommands = () => {
                     <td>{command.vendor}</td>
                     <td>{command.command}</td>
                     <td>{command.description || 'N/A'}</td>
-                    <td>{command.example || 'N/A'}</td>
                     <td>{command.version || 'N/A'}</td>
-                    <td>{command.os || 'N/A'}</td>
-                    <td>{command.category || 'N/A'}</td>
+                    <td>{command.tag || 'N/A'}</td>
                     <td>
                       <div className="form-check">
                         <input
@@ -683,6 +815,15 @@ const BrowseCommands = () => {
             </select>
           </div>
         </div>
+
+        {/* Export modal */}
+        <ExportCommandsModal
+          isOpen={isExportModalOpen}
+          onClose={closeExportModal}
+          commands={commands}
+          selectedCommandIds={selectedCommandIds}
+          vendors={vendors}
+        />
       </div>
     </Layout>
   )

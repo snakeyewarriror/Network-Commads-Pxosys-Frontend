@@ -11,8 +11,9 @@ import HomePage from './components/pages/HomePage'
 import NotFound from './components/pages/NotFound'
 import ProtectedRoute from './components/ProtectRoute'
 import BrowseCommands from './components/pages/BrowseCommands.tsx'
-import UploadCommandsPage from './components/pages/UploadCommandsPage.tsx';
+import UploadCsvPage from './components/pages/UploadCsvPage.tsx';
 import AddCommandPage from './components/pages/AddCommand.tsx';
+import UploadResultsPage from './components/pages/UploadResults.tsx';
 
 const router = createBrowserRouter([
     {
@@ -30,12 +31,12 @@ const router = createBrowserRouter([
     },
 
     {
-      path: '/login',
+      path: '/portal/admin-entry',
       element: <Login />,
     },
 
     {
-      path: '/register',
+      path: '/portal/admin-creation',
       element: <RegisterAndLogout />,
     },
 
@@ -48,7 +49,7 @@ const router = createBrowserRouter([
       path: '/upload-commands-csv',
       element: 
       <ProtectedRoute>
-        <UploadCommandsPage />
+        <UploadCsvPage />
       </ProtectedRoute>,
       errorElement: <NotFound />,
     },
@@ -63,6 +64,15 @@ const router = createBrowserRouter([
     },
 
     {
+      path: '/upload-results',
+      element: 
+      <ProtectedRoute>
+        <UploadResultsPage />
+      </ProtectedRoute>,
+      errorElement: <NotFound />,
+    },
+
+    {
       path: '*', // Catch-all for undefined routes
       element: <NotFound />,
     },
@@ -72,7 +82,7 @@ const router = createBrowserRouter([
 
 function Logout() {
   localStorage.clear()
-  return <Navigate to="/login" />
+  return <Navigate to="/portal/admin-entry" />
 }
 
 function RegisterAndLogout() {

@@ -18,7 +18,7 @@ const Layout = ({ title, children }: LayoutProps) => {
   const handleLogout = () => {
     clearTokens(); // Clear tokens from localStorage
     setIsAuthenticated(false); // Update auth state in context
-    navigate('/'); // Redirect to login page
+    navigate('/'); // Redirect to main page
   };
 
   const navbarOptions = (
@@ -32,14 +32,8 @@ const Layout = ({ title, children }: LayoutProps) => {
         </>
       )}
 
-      {isAuthenticated ? ( // Show Logout if authenticated
+      {isAuthenticated && ( // Show Logout if authenticated
         <NavbarOption label="Logout" onClick={handleLogout} url="" /> // Use onClick for logout
-      ) :
-      ( // Show Register and Login if not authenticated
-        <>
-          <NavbarOption label="Register" url="/register" />
-          <NavbarOption label="Login" url="/login" />
-        </>
       )}
     </>
   );

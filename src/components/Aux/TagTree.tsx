@@ -1,28 +1,26 @@
-// src/components/CategoryTree.tsx
-
 import React from 'react';
 
-interface CategoryTreeItem {
+interface TagTreeItem {
   id: number;
   name: string;
-  children: CategoryTreeItem[];
+  children: TagTreeItem[];
 }
 
-interface CategoryTreeProps {
-  nodes: CategoryTreeItem[];
+interface TagTreeProps {
+  nodes: TagTreeItem[];
   selectedId: number | null;
   onSelect: (id: number, name: string) => void;
 }
 
-const CategoryTree: React.FC<CategoryTreeProps> = ({ nodes, selectedId, onSelect }) => {
+const TagTree: React.FC<TagTreeProps> = ({ nodes, selectedId, onSelect }) => {
   if (!nodes || nodes.length === 0) {
-    return <div className="text-muted text-center">No categories available.</div>;
+    return <div className="text-muted text-center">No tags available.</div>;
   }
 
-  const renderNode = (node: CategoryTreeItem, level: number = 0) => (
+  const renderNode = (node: TagTreeItem, level: number = 0) => (
     <React.Fragment key={node.id}>
       <div
-        className={`category-tree-item d-flex align-items-center ${node.id === selectedId ? 'selected' : ''}`}
+        className={`tag-tree-item d-flex align-items-center ${node.id === selectedId ? 'selected' : ''}`}
         style={{ paddingLeft: `${level * 15}px`, cursor: 'pointer' }}
         onClick={() => onSelect(node.id, node.name)}
       >
@@ -36,7 +34,7 @@ const CategoryTree: React.FC<CategoryTreeProps> = ({ nodes, selectedId, onSelect
         {node.name}
       </div>
       {node.children && node.children.length > 0 && (
-        <div className="category-children">
+        <div className="tag-children">
           {node.children.map(child => renderNode(child, level + 1))}
         </div>
       )}
@@ -44,10 +42,10 @@ const CategoryTree: React.FC<CategoryTreeProps> = ({ nodes, selectedId, onSelect
   );
 
   return (
-    <div className="category-tree-list">
+    <div className="tag-tree-list">
       {nodes.map(node => renderNode(node))}
     </div>
   );
 };
 
-export default CategoryTree;
+export default TagTree;

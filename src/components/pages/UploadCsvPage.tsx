@@ -1,27 +1,24 @@
-// src/pages/UploadCommandsPage.tsx
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../base/BaseLayout';
-import CommandUploadForm from '../forms/CommandCSVUploadForm'; // Ensure this path is correct
+import CommandUploadForm from '../forms/CommandCSVUploadForm';
 import '../../css/BrowseCommands.css';
-import { toast } from 'react-toastify';
 
-const UploadCommandsPage: React.FC = () => {
+const UploadCsvPage: React.FC = () => {
+
   const navigate = useNavigate();
 
-  // Change this line: now accepts a message string
-  const handleUploadSuccess = (message: string) => {
-    toast.success(message + '\n\nRedirecting to commands list.'); // Use the passed message
-    navigate('/commands'); // Redirect back to the browse commands page
+  const handleUploadSuccess = (resultData: any) => {
+    navigate('/upload-results', { state: { uploadResult: resultData } });
   };
+
   return (
     <Layout title="Upload Commands">
       <div className="container browse-commands-container mt-4">
         <h2 className="text-center mb-4">Upload New Commands from CSV</h2>
         <div className="row justify-content-center">
           <div className="col-lg-8 col-md-10">
-            {/* Pass the updated handleUploadSuccess */}
+            {/* Pass the updated handleUploadSuccess function to the form */}
             <CommandUploadForm onUploadSuccess={handleUploadSuccess} />
           </div>
         </div>
@@ -30,4 +27,4 @@ const UploadCommandsPage: React.FC = () => {
   );
 };
 
-export default UploadCommandsPage;
+export default UploadCsvPage;

@@ -38,7 +38,7 @@ function FormRegister({ route, method }: FormLoginProps) {
                 navigate("/");
             }
            else {
-                navigate("/login");
+                navigate("/portal/admin-entry");
             }
         }
 

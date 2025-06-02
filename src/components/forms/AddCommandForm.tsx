@@ -1,68 +1,67 @@
 import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
-import CategoryTree from '../Aux/CategoryTree';
+import TagTree from '../Aux/TagTree';
 import { toast } from 'react-toastify';
 
-// Interfaces for dropdown data (reused from AddCommandPage)
-interface DropdownItem {
-  id: number;
-  name: string;
-}
+// Imports for interfaces and types
+import type {
+  DropdownItem,
+  TagTreeItem
+} from '../../types/index';
 
-interface CategoryTreeItem {
-  id: number;
-  name: string;
-  children: CategoryTreeItem[];
-}
 
 // Props for the AddCommandForm component
 interface AddCommandFormProps {
   vendors: DropdownItem[];
-  oss: DropdownItem[]; // These will be the currently filtered OS options
-  categoriesTree: CategoryTreeItem[]; // These will be the currently filtered category tree
+  oss: DropdownItem[]; // These will be the currently filtered Platform options
+  tagsTree: TagTreeItem[]; // These will be the currently filtered tag tree
   loadingDropdowns: boolean; // Indicates if initial dropdown data is loading
   onVendorChange: (vendorId: number | '') => void; // Callback when vendor selection changes
   onFormSubmit: (payload: any) => Promise<void>; // Callback for form submission
   initialSelectedVendorId: number | ''; // Pass the initially selected vendor ID from parent
-  initialSelectedOsId: number | '' | null; // MODIFIED: Allow null for OS ID
-  initialSelectedCategoryId: number | null; // Pass the initially selected Category ID from parent
-  initialSelectedCategoryName: string; // Pass the initially selected Category Name from parent
+  initialSelectedOsId: number | '' | null; // Allow null for Platform ID
+  initialSelectedTagId: number | null; // Pass the initially selected Tag ID from parent
+  initialSelectedTagName: string; // Pass the initially selected Tag Name from parent
+
   // New props for button clicks and disabled states
   onAddVendorClick: () => void;
   onAddOSClick: () => void;
-  onAddCategoryClick: () => void;
+  onAddTagClick: () => void;
   canAddOS: boolean;
-  canAddCategory: boolean;
+  canAddTag: boolean;
 }
 
 const AddCommandForm: React.FC<AddCommandFormProps> = ({
   vendors,
   oss,
-  categoriesTree,
+  tagsTree,
   loadingDropdowns,
   onVendorChange,
   onFormSubmit,
   initialSelectedVendorId,
   initialSelectedOsId,
-  initialSelectedCategoryId,
-  initialSelectedCategoryName,
+  initialSelectedTagId,
+  initialSelectedTagName,
+
   // Destructure new props
   onAddVendorClick,
   onAddOSClick,
-  onAddCategoryClick,
+  onAddTagClick,
   canAddOS,
-  canAddCategory,
+  canAddTag,
 }) => {
+
   // Form states - managed within the form component
   const [command, setCommand] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [example, setExample] = useState<string>('');
   const [version, setVersion] = useState<string>('');
+
   const [selectedVendorId, setSelectedVendorId] = useState<number | ''>(initialSelectedVendorId);
-  // MODIFIED: Allow null for selectedOsId
   const [selectedOsId, setSelectedOsId] = useState<number | '' | null>(initialSelectedOsId);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(initialSelectedCategoryId);
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>(initialSelectedCategoryName);
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(initialSelectedTagId);
+  const [selectedTagName, setSelectedTagName] = useState<string>(initialSelectedTagName);
+
+  const [TagDropdownOpen, setTagDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
 
@@ -76,42 +75,40 @@ const AddCommandForm: React.FC<AddCommandFormProps> = ({
   }, [initialSelectedOsId]);
 
   useEffect(() => {
-    setSelectedCategoryId(initialSelectedCategoryId);
-  }, [initialSelectedCategoryId]);
+    setSelectedTagId(initialSelectedTagId);
+  }, [initialSelectedTagId]);
 
   useEffect(() => {
-    setSelectedCategoryName(initialSelectedCategoryName);
-  }, [initialSelectedCategoryName]);
+    setSelectedTagName(initialSelectedTagName);
+  }, [initialSelectedTagName]);
 
 
   const handleInternalVendorChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const newVendorId = Number(e.target.value);
     setSelectedVendorId(newVendorId);
-    // Notify parent about vendor change for filtering
     onVendorChange(newVendorId);
-    // Reset OS and Category selections when vendor changes
-    // MODIFIED: Reset OS to null, not ''
+
     setSelectedOsId(null);
-    setSelectedCategoryId(null);
-    setSelectedCategoryName('');
+    setSelectedTagId(null);
+    setSelectedTagName('');
   };
 
-  const handleCategorySelect = (id: number, name: string) => {
-    setSelectedCategoryId(id);
-    setSelectedCategoryName(name);
-    setCategoryDropdownOpen(false);
+  const handleTagSelect = (id: number, name: string) => {
+    setSelectedTagId(id);
+    setSelectedTagName(name);
+    setTagDropdownOpen(false);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // MODIFIED: Removed selectedOsId from required validation
     if (!command.trim() || !selectedVendorId) {
       toast.error('Command and Vendor are required fields.');
       setIsSubmitting(false);
       return;
     }
+
 
     const payload = {
       command: command.trim(),
@@ -119,9 +116,8 @@ const AddCommandForm: React.FC<AddCommandFormProps> = ({
       example: example.trim() || null,
       version: version.trim() || null,
       vendor: selectedVendorId,
-      // MODIFIED: Send selectedOsId directly, it can be null
-      os: selectedOsId || null,
-      category: selectedCategoryId || null,
+      platform: selectedOsId || null,
+      tag: selectedTagId || null,
     };
 
     try {
@@ -146,7 +142,7 @@ const AddCommandForm: React.FC<AddCommandFormProps> = ({
           id="command"
           value={command}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setCommand(e.target.value)}
-          required // Command is still required
+          required
           aria-label="Command"
         />
       </div>
@@ -200,7 +196,7 @@ const AddCommandForm: React.FC<AddCommandFormProps> = ({
             id="vendor"
             value={selectedVendorId}
             onChange={handleInternalVendorChange}
-            required // Vendor is still required
+            required
             aria-label="Vendor"
           >
             <option value="">-- Select Vendor --</option>
@@ -213,46 +209,44 @@ const AddCommandForm: React.FC<AddCommandFormProps> = ({
         )}
       </div>
 
-      {/* OS Dropdown with inline button */}
+      {/* Platform Dropdown with inline button */}
       <div className="mb-3">
         <div className="d-flex align-items-center mb-1">
-          {/* MODIFIED: Removed the '*' from the label */}
-          <label htmlFor="os" className="form-label me-2 mb-0">OS</label>
+
+          <label htmlFor="platform" className="form-label me-2 mb-0">Platform</label>
           <button
             type="button"
             className="btn btn-outline-info btn-sm ms-auto"
             onClick={onAddOSClick}
             disabled={!canAddOS}
-            title={!canAddOS ? "Add a Vendor first" : "Add New OS"}
+            title={!canAddOS ? "Add a Vendor first" : "Add New Platform"}
           >
             +
           </button>
         </div>
         {loadingDropdowns ? (
           <select className="form-select" disabled>
-            <option>Loading OSes...</option>
+            <option>Loading Platforms...</option>
           </select>
         ) : (
           <select
             className="form-select"
-            id="os"
-            value={selectedOsId === null ? '' : selectedOsId} // MODIFIED: Handle null state for display
+            id="platform"
+            value={selectedOsId === null ? '' : selectedOsId}
             onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-              // MODIFIED: Set to null if the empty option is selected
               const value = e.target.value === '' ? null : Number(e.target.value);
               setSelectedOsId(value);
             }}
-            // MODIFIED: Removed required attribute
-            aria-label="OS"
+            aria-label="Platform"
           >
-            {/* MODIFIED: Added an option for "None" or "Optional" */}
-            <option value="">-- Select OS (Optional) --</option>
+
+            <option value="">-- Select Platform (Optional) --</option>
             {oss.length === 0 && selectedVendorId !== '' ? (
-              <option disabled>No OS found for this vendor</option>
+              <option disabled>No Platform found for this vendor</option>
             ) : (
-              oss.map(os => (
-                <option key={os.id} value={os.id}>
-                  {os.name}
+              oss.map(platform => (
+                <option key={platform.id} value={platform.id}>
+                  {platform.name}
                 </option>
               ))
             )}
@@ -260,16 +254,16 @@ const AddCommandForm: React.FC<AddCommandFormProps> = ({
         )}
       </div>
 
-      {/* Category Dropdown (using CategoryTree) with inline button */}
+      {/* Tag Dropdown (using TagTree) */}
       <div className="mb-3">
         <div className="d-flex align-items-center mb-1">
-          <label htmlFor="category" className="form-label me-2 mb-0">Category</label>
+          <label htmlFor="tag" className="form-label me-2 mb-0">Tag</label>
           <button
             type="button"
             className="btn btn-outline-success btn-sm ms-auto"
-            onClick={onAddCategoryClick}
-            disabled={!canAddCategory}
-            title={!canAddCategory ? "Add a Vendor first" : "Add New Category"}
+            onClick={onAddTagClick}
+            disabled={!canAddTag}
+            title={!canAddTag ? "Add a Vendor first" : "Add New Tag"}
           >
             +
           </button>
@@ -278,14 +272,14 @@ const AddCommandForm: React.FC<AddCommandFormProps> = ({
           <button
             className="form-select text-start"
             type="button"
-            onClick={() => setCategoryDropdownOpen(prev => !prev)}
+            onClick={() => setTagDropdownOpen(prev => !prev)}
             aria-haspopup="true"
-            aria-expanded={categoryDropdownOpen}
+            aria-expanded={TagDropdownOpen}
           >
-            {selectedCategoryName || '-- Select Category (Optional) --'}
+            {selectedTagName || '-- Select Tag (Optional) --'}
           </button>
 
-          {categoryDropdownOpen && (
+          {TagDropdownOpen && (
             <div
               className="dropdown-menu show w-100 mt-1 p-2"
               style={{
@@ -296,15 +290,15 @@ const AddCommandForm: React.FC<AddCommandFormProps> = ({
               }}
             >
               {loadingDropdowns ? (
-                <div>Loading Categories...</div>
+                <div>Loading Tags...</div>
               ) : (
-                categoriesTree.length === 0 && selectedVendorId !== '' ? (
-                  <div>No categories found for this vendor.</div>
+                tagsTree.length === 0 && selectedVendorId !== '' ? (
+                  <div>No tags found for this vendor.</div>
                 ) : (
-                  <CategoryTree
-                    nodes={categoriesTree}
-                    selectedId={selectedCategoryId}
-                    onSelect={handleCategorySelect}
+                  <TagTree
+                    nodes={tagsTree}
+                    selectedId={selectedTagId}
+                    onSelect={handleTagSelect}
                   />
                 )
               )}

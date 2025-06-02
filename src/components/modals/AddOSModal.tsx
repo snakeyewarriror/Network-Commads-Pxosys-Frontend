@@ -33,7 +33,7 @@ const AddOSModal: React.FC<AddOSModalProps> = ({ isOpen, onClose, onOSAdded, ven
     setError(null);
 
     if (!osName.trim()) {
-      setError('OS name cannot be empty.');
+      setError('Platform name cannot be empty.');
       return;
     }
     if (!internalSelectedVendorId) {
@@ -43,7 +43,7 @@ const AddOSModal: React.FC<AddOSModalProps> = ({ isOpen, onClose, onOSAdded, ven
 
     setIsSubmitting(true);
     try {
-      const response = await api.post('/os/create/', {
+      const response = await api.post('/platform/create/', {
         name: osName.trim(),
         vendor: internalSelectedVendorId,
       });
@@ -51,13 +51,12 @@ const AddOSModal: React.FC<AddOSModalProps> = ({ isOpen, onClose, onOSAdded, ven
       if (response.status === 201) {
         onOSAdded(response.data); // Notify parent
         setOsName(''); // Clear input
-        // Keep internalSelectedVendorId for convenience if adding multiple OSes for the same vendor
         onClose();
       } else {
-        setError('Failed to add OS. Please try again.');
+        setError('Failed to add Platform. Please try again.');
       }
     } catch (err: any) {
-      console.error('Error adding OS:', err);
+      console.error('Error adding Platform:', err);
       setError(err.response?.data?.name?.[0] || err.response?.data?.detail || 'An unexpected error occurred.');
     } finally {
       setIsSubmitting(false);
@@ -68,8 +67,6 @@ const AddOSModal: React.FC<AddOSModalProps> = ({ isOpen, onClose, onOSAdded, ven
     setOsName('');
     setError(null);
     setIsSubmitting(false);
-    // Optionally reset vendor selection on close
-    // setInternalSelectedVendorId('');
     onClose();
   };
 
@@ -77,12 +74,12 @@ const AddOSModal: React.FC<AddOSModalProps> = ({ isOpen, onClose, onOSAdded, ven
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
-          <h2>Add New OS</h2>
+          <h2>Add New Platform</h2>
           <button className="close-button" onClick={handleClose}>&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="mb-3">
-            <label htmlFor="osName" className="form-label">OS Name:</label>
+            <label htmlFor="osName" className="form-label">Platform Name:</label>
             <input
               type="text"
               id="osName"
@@ -91,7 +88,7 @@ const AddOSModal: React.FC<AddOSModalProps> = ({ isOpen, onClose, onOSAdded, ven
               onChange={(e: ChangeEvent<HTMLInputElement>) => setOsName(e.target.value)}
               disabled={isSubmitting}
               required
-              aria-label="OS Name"
+              aria-label="Platform Name"
             />
           </div>
           <div className="mb-3">
@@ -103,7 +100,7 @@ const AddOSModal: React.FC<AddOSModalProps> = ({ isOpen, onClose, onOSAdded, ven
               onChange={(e: ChangeEvent<HTMLSelectElement>) => setInternalSelectedVendorId(Number(e.target.value))}
               disabled={isSubmitting}
               required
-              aria-label="OS Vendor"
+              aria-label="Platform Vendor"
             >
               <option value="">-- Select Vendor --</option>
               {vendors.map(vendor => (
@@ -125,7 +122,7 @@ const AddOSModal: React.FC<AddOSModalProps> = ({ isOpen, onClose, onOSAdded, ven
                   <span className="ms-2">Adding...</span>
                 </>
               ) : (
-                'Add OS'
+                'Add Platform'
               )}
             </button>
           </div>

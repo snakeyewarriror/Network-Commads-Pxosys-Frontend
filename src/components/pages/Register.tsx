@@ -7,7 +7,7 @@ const Register = () => {
   return (
     <Layout title="Pxosys">
       <div className="text-center mt-5">
-        <FormRegister route="/register/" method="register" />
+        <FormRegister route="/portal/admin-creation/" method="register" />
       </div>
     </Layout>
   )

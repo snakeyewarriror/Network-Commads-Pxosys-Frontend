@@ -2,37 +2,33 @@ import React, { useState, type FormEvent, type ChangeEvent, useEffect } from 're
 import api from '../../api';
 import '../../css/Modal.css';
 
-interface DropdownItem {
-  id: number;
-  name: string;
-}
+// Imports for interfaces and types
+import type {
+  DropdownItem,
+  TagTreeItem
+} from '../../types/index';
 
-interface CategoryTreeItem {
-  id: number;
-  name: string;
-  children: CategoryTreeItem[];
-}
 
-interface AddCategoryModalProps {
+interface AddTagModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCategoryAdded: (newCategory: { id: number; name: string; vendor: number; parent: number | null }) => void;
+  onTagAdded: (newTag: { id: number; name: string; vendor: number; parent: number | null }) => void;
   vendors: DropdownItem[]; // List of existing vendors to select from
   selectedVendorId: number | ''; // Pre-selected vendor from the main form
-  parentCategories: CategoryTreeItem[]; // Categories to select as parent (filtered by selectedVendorId)
+  parentTags: TagTreeItem[]; // Tags to select as parent (filtered by selectedVendorId)
 }
 
-const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
+const AddTagModal: React.FC<AddTagModalProps> = ({
   isOpen,
   onClose,
-  onCategoryAdded,
+  onTagAdded,
   vendors,
   selectedVendorId,
-  parentCategories,
+  parentTags,
 }) => {
-  const [categoryName, setCategoryName] = useState('');
+  const [TagName, setTagName] = useState('');
   const [internalSelectedVendorId, setInternalSelectedVendorId] = useState<number | ''>(selectedVendorId);
-  const [selectedParentCategoryId, setSelectedParentCategoryId] = useState<number | null>(null);
+  const [selectedParentTagId, setSelectedParentTagId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,10 +37,10 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     setInternalSelectedVendorId(selectedVendorId);
   }, [selectedVendorId]);
 
-  // Reset parent category selection if the vendor or parent categories list changes
+  // Reset parent Tag selection if the vendor or parent Tags list changes
   useEffect(() => {
-    setSelectedParentCategoryId(null);
-  }, [selectedVendorId, parentCategories]);
+    setSelectedParentTagId(null);
+  }, [selectedVendorId, parentTags]);
 
   if (!isOpen) return null;
 
@@ -52,8 +48,8 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     e.preventDefault();
     setError(null);
 
-    if (!categoryName.trim()) {
-      setError('Category name cannot be empty.');
+    if (!TagName.trim()) {
+      setError('Tag name cannot be empty.');
       return;
     }
     if (!internalSelectedVendorId) {
@@ -64,23 +60,23 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     setIsSubmitting(true);
     try {
       const payload = {
-        name: categoryName.trim(),
+        name: TagName.trim(),
         vendor: internalSelectedVendorId,
-        parent: selectedParentCategoryId, // null if not selected
+        parent: selectedParentTagId, // null if not selected
       };
 
-      const response = await api.post('/categories/create/', payload);
+      const response = await api.post('/tags/create/', payload);
 
       if (response.status === 201) {
-        onCategoryAdded(response.data); // Notify parent
-        setCategoryName(''); // Clear input
-        setSelectedParentCategoryId(null); // Clear parent selection
+        onTagAdded(response.data); // Notify parent
+        setTagName(''); // Clear input
+        setSelectedParentTagId(null); // Clear parent selection
         onClose();
       } else {
-        setError('Failed to add category. Please try again.');
+        setError('Failed to add tag. Please try again.');
       }
     } catch (err: any) {
-      console.error('Error adding category:', err);
+      console.error('Error adding tag:', err);
       setError(err.response?.data?.name?.[0] || err.response?.data?.detail || 'An unexpected error occurred.');
     } finally {
       setIsSubmitting(false);
@@ -88,20 +84,20 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   };
 
   const handleClose = () => {
-    setCategoryName('');
-    setSelectedParentCategoryId(null);
+    setTagName('');
+    setSelectedParentTagId(null);
     setError(null);
     setIsSubmitting(false);
     onClose();
   };
 
-  // Helper function to render nested categories as flat options with indentation
-  const renderCategoryOptions = (categories: CategoryTreeItem[], level: number = 0): React.ReactNode[] => {
-    return categories.flatMap(category => [
-      <option key={category.id} value={category.id}>
-        {'--'.repeat(level)} {category.name}
+  // Helper function to render nested tags as flat options with indentation
+  const renderTagOptions = (tags: TagTreeItem[], level: number = 0): React.ReactNode[] => {
+    return tags.flatMap(tag => [
+      <option key={tag.id} value={tag.id}>
+        {'--'.repeat(level)} {tag.name}
       </option>,
-      ...renderCategoryOptions(category.children, level + 1)
+      ...renderTagOptions(tag.children, level + 1)
     ]);
   };
 
@@ -109,33 +105,33 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
-          <h2>Add New Category</h2>
+          <h2>Add New Tag</h2>
           <button className="close-button" onClick={handleClose}>&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="mb-3">
-            <label htmlFor="categoryName" className="form-label">Category Name:</label>
+            <label htmlFor="tag" className="form-label">Tag Name:</label>
             <input
               type="text"
-              id="categoryName"
+              id="TagName"
               className="form-control"
-              value={categoryName}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setCategoryName(e.target.value)}
+              value={TagName}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setTagName(e.target.value)}
               disabled={isSubmitting}
               required
-              aria-label="Category Name"
+              aria-label="Tag Name"
             />
           </div>
           <div className="mb-3">
-            <label htmlFor="categoryVendor" className="form-label">Vendor:</label>
+            <label htmlFor="TagVendor" className="form-label">Vendor:</label>
             <select
-              id="categoryVendor"
+              id="TagVendor"
               className="form-select"
               value={internalSelectedVendorId}
               onChange={(e: ChangeEvent<HTMLSelectElement>) => setInternalSelectedVendorId(Number(e.target.value))}
               disabled={isSubmitting}
               required
-              aria-label="Category Vendor"
+              aria-label="Tag Vendor"
             >
               <option value="">-- Select Vendor --</option>
               {vendors.map(vendor => (
@@ -146,20 +142,20 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             </select>
           </div>
           <div className="mb-3">
-            <label htmlFor="parentCategory" className="form-label">Parent Category (Optional):</label>
+            <label htmlFor="parentTag" className="form-label">Parent Tag (Optional):</label>
             <select
-              id="parentCategory"
+              id="parentTag"
               className="form-select"
-              value={selectedParentCategoryId || ''}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedParentCategoryId(Number(e.target.value) || null)}
+              value={selectedParentTagId || ''}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedParentTagId(Number(e.target.value) || null)}
               disabled={isSubmitting}
-              aria-label="Parent Category"
+              aria-label="Parent Tag"
             >
-              <option value="">-- No Parent Category --</option>
-              {parentCategories.length === 0 && internalSelectedVendorId !== '' ? (
-                <option disabled>No categories for this vendor to be a parent</option>
+              <option value="">-- No Parent Tag --</option>
+              {parentTags.length === 0 && internalSelectedVendorId !== '' ? (
+                <option disabled>No tags for this vendor to be a parent</option>
               ) : (
-                renderCategoryOptions(parentCategories)
+                renderTagOptions(parentTags)
               )}
             </select>
           </div>
@@ -175,7 +171,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                   <span className="ms-2">Adding...</span>
                 </>
               ) : (
-                'Add Category'
+                'Add Tag'
               )}
             </button>
           </div>
@@ -185,4 +181,4 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   );
 };
 
-export default AddCategoryModal;
+export default AddTagModal;

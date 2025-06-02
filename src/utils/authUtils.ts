@@ -71,7 +71,7 @@ export const checkAndRefreshToken = async (): Promise<boolean> => {
  */
 const performTokenRefresh = async (refreshToken: string): Promise<boolean> => {
   try {
-    const response = await axios.post(`${AUTH_API_URL}/refresh`, { token: refreshToken }); // Use axios directly
+    const response = await axios.post(`${AUTH_API_URL}/refresh/`, { refresh: refreshToken }); // Use axios directly
     if (response.status === 200) {
       localStorage.setItem(ACCESS_TOKEN, response.data.access);
       return true;
