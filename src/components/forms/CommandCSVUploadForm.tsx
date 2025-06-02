@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, type ChangeEvent, type FormEve
 import api from '../../api';
 import '../../css/BrowseCommands.css';
 import '../../css/Modal.css';
-import { toast } from 'react-toastify';
 
 import AddVendorModal from '../modals/AddVendorModal';
 import AddTagModal from '../modals/AddtagModal';
