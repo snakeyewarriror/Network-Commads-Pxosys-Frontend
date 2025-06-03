@@ -9,29 +9,9 @@ import AddTagModal from '../modals/AddtagModal';
 // Imports for interfaces and types
 import type {
   DropdownItem,
-  TagTreeItem
+  TagTreeItem,
+  UploadSuccessData
 } from '../../types/index';
-
-
-interface UploadSuccessData {
-  message: string;
-  data: {
-    vendor_name: string;
-    main_tag_name: string;
-    summary: {
-      total_commands_in_csv: number;
-      commands_created: number;
-      commands_skipped: number;
-      total_tags_in_csv: number;
-      tags_created: number;
-    };
-    details: {
-      created_commands: { command: string; description: string; tag: string; status: string }[];
-      skipped_commands: { command: string; reason: string; status: string }[];
-      created_tags: { name: string; parent: string | null; status: string }[];
-    };
-  };
-}
 
 
 interface CommandUploadFormProps {
@@ -44,6 +24,7 @@ const CommandCSVUploadForm: React.FC<CommandUploadFormProps> = ({ onUploadSucces
   const [fileError, setFileError] = useState<string | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<number | ''>('');
   const [selectedMainTagId, setSelectedMainTagId] = useState<number | null>(null);
+  const [overrideExisting, setOverrideExisting] = useState<boolean>(false);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -118,6 +99,7 @@ const CommandCSVUploadForm: React.FC<CommandUploadFormProps> = ({ onUploadSucces
 
 
   // --- Initial Data Load on Mount ---
+
   useEffect(() => {
     const loadInitialData = async () => {
       setLoadingDropdowns(true);
@@ -162,6 +144,10 @@ const CommandCSVUploadForm: React.FC<CommandUploadFormProps> = ({ onUploadSucces
   const handleMainTagChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
     setSelectedMainTagId(value === '' ? null : Number(value));
+  };
+
+  const handleOverrideExistingChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setOverrideExisting(event.target.checked);
   };
 
 
@@ -211,6 +197,9 @@ const CommandCSVUploadForm: React.FC<CommandUploadFormProps> = ({ onUploadSucces
     if (selectedMainTagId !== null) { // Only append if a Tag is selected
       formData.append('main_tag', String(selectedMainTagId)); // Send ID
     }
+
+    formData.append('override', String(overrideExisting)); // FormData expects string values
+    
 
     try {
       const response = await api.post<UploadSuccessData>('/commands/csv-upload', formData, { // Type response data
@@ -364,6 +353,23 @@ const CommandCSVUploadForm: React.FC<CommandUploadFormProps> = ({ onUploadSucces
           <div className="form-text">
             All tags found in the CSV will be placed under this main Tag for the selected vendor.
           </div>
+        </div>
+
+        <div className="form-check mb-3">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="overrideExisting"
+            checked={overrideExisting}
+            onChange={handleOverrideExistingChange}
+            disabled={loading}
+          />
+          <label className="form-check-label" htmlFor="overrideExisting">
+            Override existing commands with new data
+          </label>
+          <small className="form-text text-muted d-block">
+            If checked, commands in the CSV that already exist for the selected vendor will be updated. If unchecked, existing commands will be skipped.
+          </small>
         </div>
 
         <button type="submit" className="btn btn-primary w-100" disabled={loading || loadingDropdowns}>

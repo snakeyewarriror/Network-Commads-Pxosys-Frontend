@@ -4,33 +4,21 @@ import Layout from '../base/BaseLayout';
 import '../../css/BrowseCommands.css';
 import { toast } from 'react-toastify';
 
-interface UploadResult {
-    message: string;
-    data: {
-        vendor_name: string;
-        main_tag_name: string;
-        summary: {
-        total_commands_in_csv: number;
-        commands_created: number;
-        commands_skipped: number;
-        total_tags_in_csv: number;
-        tags_created: number;
-        };
-        details: {
-        created_commands: { command: string; description: string; tag: string; status: string }[];
-        skipped_commands: { command: string; reason: string; status: string }[];
-        created_tags: { name: string; parent: string | null; status: string }[];
-        };
-    };
-}
+// Imports for interfaces and types
+import type {
+  UploadSuccessData
+} from '../../types/index';
+
 
 // Function to format the data that is sent to the csv and txt
 const getFormattedContent = (
-  uploadResult: UploadResult,
+  uploadSuccessData: UploadSuccessData,
   format: 'csv' | 'txt'
 ): string => {
-  const { data } = uploadResult;
+  const { data } = uploadSuccessData;
   const { vendor_name, main_tag_name, summary, details } = data;
+
+  console.log(data);
 
   let content = '';
 
@@ -69,21 +57,25 @@ const getFormattedContent = (
   if (format === 'csv') {
     content += `Summary:${EOL}`;
     content += `Total Commands in CSV,${summary.total_commands_in_csv}${EOL}`;
-    content += `Commands Created,${summary.commands_created}${EOL}`;
-    content += `Commands Skipped,${summary.commands_skipped}${EOL}`;
-    content += `Total Tags in CSV,${summary.total_tags_in_csv}${EOL}`;
-    content += `Tags Created,${summary.tags_created}${EOL}${EOL}`;
-  } else { // txt
+    content += `Commands Created,${summary.commands_created || 0}${EOL}`; // Use || 0 for optional fields
+    content += `Commands Updated,${summary.commands_updated || 0}${EOL}`; 
+    content += `Commands Skipped,${summary.commands_skipped || 0}${EOL}`;
+    content += `Total Tags in CSV,${summary.total_tags_in_csv}${EOL}`
+    content += `Tags Created,${summary.tags_created || 0}${EOL}${EOL}`;
+  }
+
+  else { // txt
     content += `--- Summary ---${EOL}`;
     content += txtFormatLabelValue("Total Commands in CSV", summary.total_commands_in_csv) + EOL;
     content += txtFormatLabelValue("Commands Created", summary.commands_created) + EOL;
+    content += txtFormatLabelValue("Commands Updated", summary.commands_updated) + EOL;
     content += txtFormatLabelValue("Commands Skipped", summary.commands_skipped) + EOL;
     content += txtFormatLabelValue("Total Tags in CSV", summary.total_tags_in_csv) + EOL;
     content += txtFormatLabelValue("Tags Created", summary.tags_created) + EOL + EOL;
   }
 
   // Created Commands Section
-  if (details.created_commands.length > 0) {
+  if (details.created_commands && details.created_commands.length > 0) {
     if (format === 'csv') {
       content += `Successfully Created Commands:${EOL}`;
       content += `Command,Description,Tag,Status${EOL}`;
@@ -91,7 +83,9 @@ const getFormattedContent = (
         content += `${csvEscape(cmd.command)},${csvEscape(cmd.description)},${csvEscape(cmd.tag)},${csvEscape(cmd.status)}${EOL}`;
       });
       content += EOL;
-    } else { // txt
+    }
+
+    else { // txt
       content += `--- Successfully Created Commands ---${EOL}`;
       details.created_commands.forEach((cmd, index) => {
         content += `  ${index + 1}. ${txtFormatLabelValue("Command", cmd.command)}${EOL}`;
@@ -105,7 +99,7 @@ const getFormattedContent = (
   }
 
   // Skipped Commands Section
-  if (details.skipped_commands.length > 0) {
+  if (details.skipped_commands && details.skipped_commands.length > 0) {
     if (format === 'csv') {
       content += `Skipped Commands:${EOL}`;
       content += `Command,Reason,Status${EOL}`;
@@ -113,7 +107,8 @@ const getFormattedContent = (
         content += `${csvEscape(cmd.command)},${csvEscape(cmd.reason)},${csvEscape(cmd.status)}${EOL}`;
       });
       content += EOL;
-    } else { // txt
+    }
+    else { // txt
       content += `--- Skipped Commands ---${EOL}`;
       details.skipped_commands.forEach((cmd, index) => {
         content += `  ${index + 1}. ${txtFormatLabelValue("Command", cmd.command)}${EOL}`;
@@ -125,8 +120,31 @@ const getFormattedContent = (
     }
   }
 
+  if (details.updated_commands && details.updated_commands.length > 0) {
+    if (format === 'csv') {
+      content += `Successfully Updated Commands:${EOL}`;
+      content += `Command,Description,Tag,Status${EOL}`;
+      details.updated_commands.forEach(cmd => {
+        content += `${csvEscape(cmd.command)},${csvEscape(cmd.description)},${csvEscape(cmd.tag)},${csvEscape(cmd.status)}${EOL}`;
+      });
+      content += EOL;
+    }
+    
+    else { // txt
+      content += `--- Successfully Updated Commands ---${EOL}`;
+      details.updated_commands.forEach((cmd, index) => {
+        content += `  ${index + 1}. ${txtFormatLabelValue("Command", cmd.command)}${EOL}`;
+        content += `     ${txtFormatLabelValue("Description", cmd.description, 5)}${EOL}`;
+        content += `     ${txtFormatLabelValue("Tag", cmd.tag, 5)}${EOL}`;
+        content += `     ${txtFormatLabelValue("Status", cmd.status, 5)}${EOL}`;
+        content += `     ---${EOL}`;
+      });
+      content += EOL;
+    }
+  }
+
   // Created Tags Section
-  if (details.created_tags.length > 0) {
+  if (details.created_tags && details.created_tags.length > 0) {
     if (format === 'csv') {
       content += `Created Tags:${EOL}`;
       content += `Tag Name,Parent,Status${EOL}`;
@@ -150,10 +168,10 @@ const getFormattedContent = (
   return content;
 };
 
-const UploadResultsPage: React.FC = () => {
+const UploadSuccessDatasPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { uploadResult } = location.state as { uploadResult: UploadResult } || {};
+    const { uploadResult } = location.state as { uploadResult: UploadSuccessData } || {};
 
     if (!uploadResult) {
         React.useEffect(() => {
@@ -167,16 +185,18 @@ const UploadResultsPage: React.FC = () => {
 
     const renderStatusIcon = (status: string) => {
         switch (status) {
-        case 'Created Successfully':
-        case 'Created':
-        case 'Created (Main Tag)':
-        case 'Created (from Command Tag)':
+          case 'Created Successfully':
+          case 'Updated Successfully':
+            return <i className="bi bi-arrow-clockwise text-info me-2"></i>; // Bootstrap Info Icon
+          case 'Created':
+          case 'Created (Main Tag)':
+          case 'Created (from Command Tag)':
             return <i className="bi bi-check-circle-fill text-success me-2"></i>; // Bootstrap Success Icon
-        case 'Skipped':
+          case 'Skipped':
             return <i className="bi bi-exclamation-triangle-fill text-warning me-2"></i>; // Bootstrap Warning Icon
-        case 'Failed':
+          case 'Failed':
             return <i className="bi bi-x-circle-fill text-danger me-2"></i>; // Bootstrap Error Icon
-        default:
+          default:
             return null;
         }
     };
@@ -220,17 +240,20 @@ const UploadResultsPage: React.FC = () => {
                     <h5 className="mt-4">Summary:</h5>
                     <ul>
                     <li>Total Commands in CSV: {summary.total_commands_in_csv}</li>
-                    <li>Commands Created: {summary.commands_created}</li>
-                    <li>Commands Skipped: {summary.commands_skipped}</li>
+                    <li>Commands Created: {summary.commands_created || 0}</li>
+                    <li>Commands Updated: {summary.commands_updated || 0}</li>
+                    <li>Commands Skipped: {summary.commands_skipped || 0}</li>
                     <li>Total Tags in CSV: {summary.total_tags_in_csv}</li>
-                    <li>Tags Created: {summary.tags_created}</li>
+                    <li>Tags Created: {summary.tags_created || 0}</li>
                     </ul>
 
-                    {details.created_commands.length > 0 && (
+                    {/* Created commands */}
+                    {details.created_commands && details.created_commands.length > 0 && (
                     <h5 className="mt-4">Successfully Created Commands:</h5>
                     )}
+
                     <ul className="list-group mb-3">
-                    {details.created_commands.map((cmd, index) => (
+                    {details.created_commands && details.created_commands.map((cmd, index) => (
                         <li key={index} className="list-group-item d-flex align-items-center">
                         {renderStatusIcon(cmd.status)}
                         <div>
@@ -242,11 +265,30 @@ const UploadResultsPage: React.FC = () => {
                     ))}
                     </ul>
 
-                    {details.skipped_commands.length > 0 && (
+                    {/* Updated commands */}
+                    {details.updated_commands && details.updated_commands.length > 0 && (
+                    <h5 className="mt-4 text-info">Successfully Updated Commands:</h5>
+                    )}
+                    <ul className="list-group mb-3">
+                    {details.updated_commands && details.updated_commands.map((cmd, index) => (
+                        <li key={index} className="list-group-item list-group-item-info d-flex align-items-center">
+                        {renderStatusIcon(cmd.status)}
+                        <div>
+                            <strong>{cmd.command}</strong> (Tag: {cmd.tag})
+                            <br />
+                            <small>{cmd.description ? cmd.description.substring(0, 100) + '...' : 'No description'}</small>
+                        </div>
+                        </li>
+                    ))}
+                    </ul>
+
+
+                    {/* Skipped commands */}
+                    {details.skipped_commands && details.skipped_commands.length > 0 && (
                     <h5 className="mt-4 text-warning">Skipped Commands:</h5>
                     )}
                     <ul className="list-group mb-3">
-                    {details.skipped_commands.map((cmd, index) => (
+                    {details.skipped_commands && details.skipped_commands.map((cmd, index) => (
                         <li key={index} className="list-group-item list-group-item-warning d-flex align-items-center">
                         {renderStatusIcon(cmd.status)}
                         <div>
@@ -256,11 +298,12 @@ const UploadResultsPage: React.FC = () => {
                     ))}
                     </ul>
 
-                    {details.created_tags.length > 0 && (
+                    {/* Created tags */}
+                    {details.created_tags && details.created_tags.length > 0 && (
                     <h5 className="mt-4">Created Tags:</h5>
                     )}
                     <ul className="list-group mb-3">
-                    {details.created_tags.map((tag, index) => (
+                    {details.created_tags && details.created_tags.map((tag, index) => (
                         <li key={index} className="list-group-item d-flex align-items-center">
                         {renderStatusIcon(tag.status)}
                         <div>
@@ -294,4 +337,4 @@ const UploadResultsPage: React.FC = () => {
     );
 };
 
-export default UploadResultsPage;
+export default UploadSuccessDatasPage;

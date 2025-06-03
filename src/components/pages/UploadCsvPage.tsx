@@ -15,10 +15,12 @@ const UploadCsvPage: React.FC = () => {
   return (
     <Layout title="Upload Commands">
       <div className="container browse-commands-container mt-4">
+
         <h2 className="text-center mb-4">Upload New Commands from CSV</h2>
+
         <div className="row justify-content-center">
+          
           <div className="col-lg-8 col-md-10">
-            {/* Pass the updated handleUploadSuccess function to the form */}
             <CommandUploadForm onUploadSuccess={handleUploadSuccess} />
           </div>
         </div>

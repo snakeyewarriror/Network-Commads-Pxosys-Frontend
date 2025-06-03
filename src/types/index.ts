@@ -30,7 +30,7 @@ export interface PagedResponse<T> {
   results: T[];
 }
 
-// And your filter input values
+
 export interface filter_input_values {
   vendor__name: string;
   platform__name: string;
@@ -39,3 +39,27 @@ export interface filter_input_values {
 }
 
 export type FilterName = keyof filter_input_values;
+
+
+
+export interface UploadSuccessData {
+  message: string;
+  data: {
+    vendor_name: string;
+    main_tag_name: string;
+    summary: {
+      total_commands_in_csv: number;
+      commands_created?: number;
+      commands_updated?: number;
+      commands_skipped?: number;
+      total_tags_in_csv: number;
+      tags_created: number;
+    };
+    details: {
+      created_commands?: { command: string; description: string; tag: string; status: string }[];
+      updated_commands?: { command: string; description: string; tag: string; status: string }[];
+      skipped_commands?: { command: string; reason: string; status: string }[];
+      created_tags?: { name: string; parent: string | null; status: string }[];
+    };
+  };
+}

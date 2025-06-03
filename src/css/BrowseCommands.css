@@ -145,3 +145,9 @@
     margin-top: 1rem;
     margin-bottom: 1rem;
 }
+
+/* Info group for result page */
+.list-group-item-info {
+  background-color: #f3fbff !important;
+}
+
