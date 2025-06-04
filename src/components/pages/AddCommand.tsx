@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../base/BaseLayout';
-import api from '../../api';
+import api from '../../api'; // Still needed for initial dropdown fetches
 import { useNavigate } from 'react-router-dom';
 import AddCommandForm from '../forms/AddCommandForm';
 import { toast } from 'react-toastify';
@@ -148,22 +148,13 @@ const AddCommandPage: React.FC = () => {
     fetchDependentDropdowns(newVendorId); // Fetch new filtered lists for Platform and Tag
   };
 
-  // Called when the main command form is submitted
-  const handleFormSubmit = async (payload: any) => {
+  // Called when the main command form is submitted and the API call within the form is successful
+  const handleFormSubmit = async () => {
     try {
-
-      console.log(payload);
-      const response = await api.post('/commands/create/', payload);
-
-      if (response.status === 201) {
-        toast.success('Command added successfully!');
-        navigate('/commands'); // Redirect after success
-      } else {
-        toast.error('Failed to add command.');
-      }
-    } catch (err: any) {
+      navigate('/commands'); // Redirect after success
+    }
+    catch (err: any) {
       printErrors(err);
-      throw err; // Re-throw to allow the form component to handle `isSubmitting` state
     }
   };
 
@@ -190,9 +181,9 @@ const AddCommandPage: React.FC = () => {
 
   // Called when a new Tag is successfully added via AddTagModal
   const handleTagAdded = useCallback((newTag: { id: number; name: string; vendor: number; parent: number | null }) => {
-    // Re-fetch the entire Tag tree for the current vendor. This is more robust
-    // for nested tags than trying to insert manually.
+
     fetchDependentDropdowns(currentSelectedVendorId);
+
     if (currentSelectedVendorId === newTag.vendor) {
       setCurrentSelectedTagId(newTag.id); // Auto-select the new Tag in the form
       setCurrentSelectedTagName(newTag.name); // Set its name for display

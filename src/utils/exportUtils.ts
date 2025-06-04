@@ -28,11 +28,11 @@ export const exportCommandsToFile = async ({
       switch (selectedVendor.name.toLowerCase()) {
 
         case 'cisco':
-          fileHeader = 'configure terminal\n';
+          fileHeader = 'terminal length 0\n';
           break;
 
         case 'juniper':
-          fileHeader = 'edit\n';
+          fileHeader = '';
           break;
 
         default:

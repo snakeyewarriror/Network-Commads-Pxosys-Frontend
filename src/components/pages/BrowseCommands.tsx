@@ -118,7 +118,6 @@ const BrowseCommands = () => {
 
     try {
       const response = await api.get<PagedResponse<Command>>('/commands/get-filtered/', { params: queryParams });
-      console.log(response)
       setCommands(response.data.results);
       setTotalCommands(response.data.count);
       setTotalPages(Math.ceil(response.data.count / size));
@@ -434,7 +433,8 @@ const BrowseCommands = () => {
       // Optionally, clear selection after direct export
       setSelectedCommandIds(new Set());
       setAllSelected(false);
-    } else {
+    }
+    else {
       // Multiple vendors or no commands selected - open modal
       setIsExportModalOpen(true);
     }
